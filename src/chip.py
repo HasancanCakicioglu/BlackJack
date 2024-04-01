@@ -21,6 +21,12 @@ class Chip:
         """
         return self.value
 
+    def double(self):
+        """
+        Doubles the value of the chip.
+        """
+        self.value *= 2
+
     def __str__(self):
         """
         Returns a string representation of the chip.

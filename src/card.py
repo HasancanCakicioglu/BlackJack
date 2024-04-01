@@ -15,13 +15,14 @@ class Card:
     - value (int): The value of the card in the game of Blackjack.
     """
 
-    def __init__(self, suit, rank):
+    def __init__(self, suit, rank, hidden=False):
         """
         Initializes a playing card with a given suit and rank.
         """
         self.suit = suit
         self.rank = rank
         self.value = values[rank]
+        self.hidden = hidden
 
     def __str__(self):
         """
