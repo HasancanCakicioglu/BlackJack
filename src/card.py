@@ -24,6 +24,16 @@ class Card:
         self.value = values[rank]
         self.hidden = hidden
 
+    def get_asset_path(self):
+        """
+        Returns the file path of the asset for this card.
+        """
+        # Card file names are formatted as 'rank_of_suit.png'
+        card_name = f"{self.rank}_of_{self.suit.lower()}.png"
+
+        # The assets are stored in the 'assets' directory
+        asset_path = f"../assets/{card_name}"
+        return asset_path
     def __str__(self):
         """
         Returns a string representation of the card.

@@ -15,6 +15,7 @@ class Table:
         """
         self.seats: list[Seat] = []
 
+
     def add_seat(self, seat):
         """
         Adds a seat to the table.
@@ -26,6 +27,12 @@ class Table:
             self.seats.append(seat)
         else:
             print("The table is full. Cannot add more seats.")
+
+    def __len__(self):
+        """
+        Returns the number of seats at the table.
+        """
+        return len(self.seats)
 
     def __str__(self):
         """

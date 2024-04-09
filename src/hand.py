@@ -26,6 +26,7 @@ class Hand:
         self.chip = chip
         self.done = False
         self.case = Outcome.UNCLEAR
+        self.splitted = False
 
     def add_card(self, card: Card):
         """
@@ -64,6 +65,7 @@ class Hand:
         if self.get_value() > 21:
 
             self.done = True
+            self.case = Outcome.LOSS
             return self.done
         return False
 
@@ -84,6 +86,37 @@ class Hand:
             return Outcome.DRAW
         return Outcome.LOSS
 
+    def double_down(self,deck):
+        """
+        Doubles the bet on the hand and draws exactly one card.
+        """
+        if len(self.cards) != 2:
+            print("You need exactly 2 cards to double down.")
+            return False
+
+        self.chip.double()
+        self.add_card(deck.hit())
+        self.done = True
+        self.is_busted()
+        return True
+
+    def can_double(self):
+        """
+        Checks if the hand is eligible for doubling down.
+
+        Returns:
+        - bool: True if the hand has exactly two cards, False otherwise.
+        """
+        return len(self.cards) == 2
+
+    def can_split(self):
+        """
+        Checks if the hand is eligible for splitting.
+
+        Returns:
+        - bool: True if the hand has exactly two cards with the same rank, False otherwise.
+        """
+        return len(self.cards) == 2 and self.cards[0].rank == self.cards[1].rank and not self.splitted
 
     def __str__(self):
         """

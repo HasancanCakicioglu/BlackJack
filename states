@@ -1,0 +1,1 @@
+state = [ dealer hand value , player hand value , usable ace in player hand,can_split,can_double ,two , three, four, five, six, seven, eight, nine, ten,ace ]

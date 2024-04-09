@@ -34,16 +34,19 @@ class Seat:
         Args:
         - hand_index (int): The index of the hand to split.
         """
-        if len(self.hands) != 1 and len(self.hands[0].cards) != 2:
+        if self.hands[0].can_split() is False:
             print("You need 1 hands to split.")
             print("You need 2 cards to split.")
-            return
+            return False
 
         hand_one = Hand(chip=self.hands[0].chip)
+        hand_one.splitted = True
         hand_one.add_card(self.hands[0].cards[0])
         hand_two = Hand(chip=self.hands[0].chip)
+        hand_two.splitted = True
         hand_two.add_card(self.hands[0].cards[1])
         self.hands = [hand_one, hand_two]
+        return True
 
     def __str__(self):
         """
