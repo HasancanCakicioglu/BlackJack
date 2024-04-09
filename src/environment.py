@@ -21,7 +21,7 @@ class BlackJackEnv(gym.Env):
         self.deck = Deck()
         self.deck.shuffle()
         self.table = Table()
-        self.table = self.create_objects(self.table, 3, [100,100,100])
+        self.table = self.create_objects(self.table, 7, [100,100,100,100,100,100,100])
         self.dealer_hand = Hand(chip=Chip(0))
         self.playingHand = None
         self.done = False
@@ -53,6 +53,9 @@ class BlackJackEnv(gym.Env):
         elif action == 3:
             if not seat.split_hand():
                 print("You need 1 hands to split.")
+            else:
+                seat.hands[0].add_card(self.deck.hit())
+                seat.hands[1].add_card(self.deck.hit())
 
         self.playingHand = hand
         hand = self.get_next_hand()
@@ -64,7 +67,6 @@ class BlackJackEnv(gym.Env):
             return self.get_obs(), self.reward, True, True, {}
 
         return self.get_obs(), 0, False, False, {}
-
 
 
     def reset(
@@ -85,27 +87,25 @@ class BlackJackEnv(gym.Env):
 
         self.table = Table()
 
-        self.table = self.create_objects(self.table, 3, [100,100,100])
+        self.table = self.create_objects(self.table, 7, [100,100,100,100,100,100,100])
         self.done = False
         self.dealer_hand = Hand(chip=Chip(0))
         self.playingHand = self.get_next_hand()[0]
         self.distribute_cards()
         return self.get_obs(), {}
 
-    def render(self, mode="human") -> Optional[Union[RenderFrame, Any]]:
-        def draw_circle(window, value, x, y):
+    def render(self, mode="human"):
+        def draw_circle(window, value, x, y,color=(0, 0, 0)):
             circle_radius = 12
-            circle_color = (0, 0, 0)  # Sarı renk
+            circle_color = color
             font = pygame.font.SysFont(None, 24)
             text_color = (255, 255, 255)  # Beyaz renk
 
             pygame.draw.circle(window, circle_color, (int(x), int(y)), circle_radius)
 
-
             text_surface = font.render(str(value), True, text_color)
             text_rect = text_surface.get_rect()
-            text_rect.center = (int(x), int(y))  # Yazıyı yuvarlağın merkezine hizala
-
+            text_rect.center = (int(x), int(y))
 
             window.blit(text_surface, text_rect)
 
@@ -139,7 +139,7 @@ class BlackJackEnv(gym.Env):
 
             num_seats = len(self.table.seats)
             seat_space = self.screenWidth / num_seats
-
+            order = True
             for indexSeat,seat in enumerate(self.table.seats):
                 splited_hand = len(seat.hands)==2
                 for indexHand,hand in enumerate(seat.hands):
@@ -152,14 +152,21 @@ class BlackJackEnv(gym.Env):
                             else:
                                 main_space = main_space - (seat_space/4)
                         self.screen.blit(image, (main_space+(indexCard*10)-(self.cardWidth/2),(self.screenHeight-150)-(indexCard*10)))
-                    draw_circle(self.screen, hand.get_value(), main_space, self.screenHeight-40)
+
+                    if not hand.done and order:
+                        color = (255,165,0)
+                        order = False
+                    elif not hand.done:
+                        color = (0, 255, 0)
+                    else:
+                        color = (255, 0, 0)
+                    draw_circle(self.screen, hand.get_value(), main_space, self.screenHeight-40,color)
 
             rect_width = 100
             rect_height = 220
             rect_x = self.screenWidth - rect_width - 10
             rect_y = 10
 
-            # Dikdörtgeni ve metni çiz
             font = pygame.font.SysFont("Arial", 12)
             surface = pygame.Surface((rect_width, rect_height), pygame.SRCALPHA)
             surface.fill((0, 0, 0, 128))  # Şeffaf dikdörtgen
@@ -170,13 +177,11 @@ class BlackJackEnv(gym.Env):
             self.screen.blit(surface, (rect_x, rect_y))
 
             if self.done:
-                # Ekranın ortasındaki dikdörtgenin boyutlarını ve konumunu hesapla
                 rect_width = self.screenWidth / 2.5
                 rect_height = self.screenHeight / 3
                 rect_x = (self.screenWidth - rect_width) / 2
                 rect_y = (self.screenHeight - rect_height) / 2
 
-                # Dikdörtgeni çiz
                 if self.reward > 0:
                     color = (0, 255, 0)  # Yeşil
                 else:

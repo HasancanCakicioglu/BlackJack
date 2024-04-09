@@ -1,3 +1,5 @@
+import time
+
 from environment import BlackJackEnv
 
 env = BlackJackEnv()
@@ -37,6 +39,7 @@ while episode_count < 1000:
         episode_count += 1
         observation = env.reset(full_reset=False)
         env.render()
+
 
 
 env.close()
