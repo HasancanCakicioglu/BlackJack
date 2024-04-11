@@ -9,6 +9,7 @@ class Deck:
     Attributes:
     - cards (list): A list of Card objects representing the deck of cards.
     - num_decks (int) : Number of Deck, Each deck has 52 card
+    - cards_drawn_from_each (list): A list of integers representing the number of cards drawn from each rank.
     """
 
     def __init__(self, num_decks=8):

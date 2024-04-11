@@ -1,11 +1,8 @@
-import time
 from typing import SupportsFloat, Any, Optional, Union
 import gymnasium as gym
 import pygame
 from gymnasium.core import ActType, ObsType, RenderFrame
 from gymnasium.vector.utils import spaces
-from pygame import QUIT
-
 from deck import Deck
 from table import Table
 from seat import Seat
@@ -14,14 +11,22 @@ from chip import Chip
 
 
 class BlackJackEnv(gym.Env):
-    def __init__(self):
+    def __init__(self,seats_count=1, chip_amounts= [100]):
         self.screen = None
         self.clock = None
+
+        self.seats_count = seats_count
+        self.chip_amounts = chip_amounts
+
+        self.win = 0
+        self.loss = 0
+        self.draw = 0
+        self.played_hands = 0
 
         self.deck = Deck()
         self.deck.shuffle()
         self.table = Table()
-        self.table = self.create_objects(self.table, 7, [100,100,100,100,100,100,100])
+        self.table = self.create_objects(self.table,self.seats_count, self.chip_amounts)
         self.dealer_hand = Hand(chip=Chip(0))
         self.playingHand = None
         self.done = False
@@ -65,6 +70,8 @@ class BlackJackEnv(gym.Env):
             self.reward = self.results()
             self.done = True
             return self.get_obs(), self.reward, True, True, {}
+        else:
+            self.playingHand = hand[0]
 
         return self.get_obs(), 0, False, False, {}
 
@@ -75,7 +82,7 @@ class BlackJackEnv(gym.Env):
         seed: Optional[int] = None,
         options: Optional[dict[str, Any]] = None,
         full_reset: bool = True,
-    ) -> tuple[ObsType, dict[str, Any]]:
+    ):
 
         if full_reset:
             self.deck = Deck()
@@ -87,29 +94,31 @@ class BlackJackEnv(gym.Env):
 
         self.table = Table()
 
-        self.table = self.create_objects(self.table, 7, [100,100,100,100,100,100,100])
+        self.table = self.create_objects(self.table,self.seats_count , self.chip_amounts)
         self.done = False
         self.dealer_hand = Hand(chip=Chip(0))
         self.playingHand = self.get_next_hand()[0]
         self.distribute_cards()
-        return self.get_obs(), {}
+        return self.get_obs()
 
-    def render(self, mode="human"):
-        def draw_circle(window, value, x, y,color=(0, 0, 0)):
-            circle_radius = 12
-            circle_color = color
-            font = pygame.font.SysFont(None, 24)
-            text_color = (255, 255, 255)  # Beyaz renk
-
-            pygame.draw.circle(window, circle_color, (int(x), int(y)), circle_radius)
-
-            text_surface = font.render(str(value), True, text_color)
-            text_rect = text_surface.get_rect()
-            text_rect.center = (int(x), int(y))
-
-            window.blit(text_surface, text_rect)
+    def render(self, mode="cmd"):
 
         if mode == 'human':
+
+            def draw_circle(window, value, x, y, color=(0, 0, 0)):
+                circle_radius = 12
+                circle_color = color
+                font = pygame.font.SysFont(None, 24)
+                text_color = (255, 255, 255)  # Beyaz renk
+
+                pygame.draw.circle(window, circle_color, (int(x), int(y)), circle_radius)
+
+                text_surface = font.render(str(value), True, text_color)
+                text_rect = text_surface.get_rect()
+                text_rect.center = (int(x), int(y))
+
+                window.blit(text_surface, text_rect)
+
             if self.screen is None:
 
                 pygame.init()
@@ -125,7 +134,7 @@ class BlackJackEnv(gym.Env):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     exit()
-            self.clock.tick(60)
+            self.clock.tick(1)
 
 
             for indexCard,card in enumerate(self.dealer_hand.cards):
@@ -183,9 +192,9 @@ class BlackJackEnv(gym.Env):
                 rect_y = (self.screenHeight - rect_height) / 2
 
                 if self.reward > 0:
-                    color = (0, 255, 0)  # Yeşil
+                    color = (0, 255, 0)
                 else:
-                    color = (255, 0, 0)  # Kırmızı
+                    color = (255, 0, 0)
 
                 pygame.draw.rect(self.screen, (169,169,169), (rect_x, rect_y, rect_width, rect_height))
                 font = pygame.font.Font(None, 36)  # Varsayılan font ve boyut
@@ -195,15 +204,43 @@ class BlackJackEnv(gym.Env):
 
             pygame.display.flip()
 
+        elif mode == 'cmd':
+
+
+            print("Dealer's Hand: ", self.dealer_hand)
+            print("Player's Hand: ", self.playingHand)
+            print("0 - Stand")
+            print("1 - Hit")
+            print("2 - Double")
+            print("3 - Split")
+
+            if self.done:
+                for seat in self.table.seats:
+                    for hand in seat.hands:
+                        self.played_hands += 1
+                        if hand.case == Outcome.WIN:
+                            self.win += 1
+                        elif hand.case == Outcome.LOSS:
+                            self.loss += 1
+                        elif hand.case == Outcome.DRAW:
+                            self.draw += 1
+                print("Dealer's Hand: ", self.dealer_hand)
+                for indexSeat,seat in enumerate(self.table.seats):
+                    for indexHand,hand in enumerate(seat.hands):
+                        print(f"Players's {indexSeat+indexHand} Hand: ", hand)
+                print("reward =", self.reward)
+                print(100*"-")
+
+
 
     def close(self):
         pass
 
     def get_obs(self):
+
         return [
             self.dealer_hand,
             self.playingHand
-
         ]
 
     def distribute_cards(self):
@@ -242,8 +279,12 @@ class BlackJackEnv(gym.Env):
                 outcome = hand.is_win(self.dealer_hand)
                 if outcome == Outcome.WIN:
                     win_chip += hand.chip.value
+                    hand.case = Outcome.WIN
                 elif outcome == Outcome.LOSS:
                     loss_chip += hand.chip.value
+                    hand.case = Outcome.LOSS
+                elif outcome == Outcome.DRAW:
+                    hand.case = Outcome.DRAW
         return win_chip - loss_chip
 
 

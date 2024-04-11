@@ -13,6 +13,7 @@ class Card:
     - suit (str): The suit of the card ('Hearts', 'Diamonds', 'Spades', 'Clubs').
     - rank (str): The rank of the card ('Two', 'Three', ..., 'King', 'Ace').
     - value (int): The value of the card in the game of Blackjack.
+    - hidden (bool): Whether the card is hidden (e.g., the dealer's hole card).
     """
 
     def __init__(self, suit, rank, hidden=False):

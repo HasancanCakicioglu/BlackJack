@@ -1,45 +1,37 @@
-import time
-
 from environment import BlackJackEnv
+from src.agent import Agent,AgentType
 
-env = BlackJackEnv()
+# Create a Blackjack environment
+env = BlackJackEnv(seats_count=2,chip_amounts=[100,100])
 observation = env.reset()
 episode_count = 0
-env.render()
-while episode_count < 1000:
 
+# Set the render mode to "human" or "cmd"
+render = "human" # "human" or "cmd"
+env.render(mode=render)
 
-    if isinstance(observation[0], list):
-        for obj in observation[0]:
-            print(obj)
-    else:
-        print(observation[0])
-        print(observation[1])
+# Create an agent with the strategy
+agent = Agent(strategy=AgentType.RANDOM,action_space=env.action_space)
 
+while episode_count < 100:
 
-    print("0 - Stand")
-    print("1 - Hit")
-    print("2 - Double")
-    print("3 - Split")
-
-    #action = int(input("Lütfen bir seçenek için ilgili numarayı girin (0-3 arası): "))
-    action = env.action_space.sample()
-    #action = 1
-
+    action = agent.act(observation[0], observation[1])
     observation, reward, done, _, info = env.step(action)
-    env.render()
-
-
+    env.render(mode=render)
 
     if done:
-        print(observation[0])
-        print(observation[1])
-        print("reward =", reward)
-        print("Win" if reward > 0 else ("Lose" if reward < 0 else "Draw"))
         episode_count += 1
         observation = env.reset(full_reset=False)
-        env.render()
+        env.render(mode=render)
 
 
+print("Episode Count: ", episode_count)
+print("Played hands: ", env.played_hands)
+print("Win: ", env.win)
+print("Loss: ", env.loss)
+print("Draw: ", env.draw)
+print("Win rate: ", env.win/env.played_hands)
+print("Loss rate: ", env.loss/env.played_hands)
+print("Draw rate: ", env.draw/env.played_hands)
 
 env.close()

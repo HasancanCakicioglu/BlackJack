@@ -1,13 +1,22 @@
 from card import Card
 from chip import Chip
-from enum import Enum
 
+class Outcome:
+    """
+    Enum representing the possible outcomes of a hand.
 
-class Outcome(Enum):
+    Attributes:
+    - WIN (str): The player wins the hand.
+    - LOSS (str): The player loses the hand.
+    - DRAW (str): The hand results in a draw.
+    - UNCLEAR (str): The outcome of the hand is unclear.
+    """
+
     WIN = "Win"
     LOSS = "Loss"
     DRAW = "Draw"
-    UNCLEAR = "unclear"
+    UNCLEAR = "Unclear"
+
 
 class Hand:
     """
@@ -16,6 +25,9 @@ class Hand:
     Attributes:
     - cards (List[Card]): A list of Card objects representing the cards in the hand.
     - chip (Chip): The chip object representing the bet placed on the hand.
+    - done (bool): A boolean indicating if the hand is complete.
+    - case (str): The outcome of the hand (WIN, LOSS, DRAW, UNCLEAR).
+    - splitted (bool): A boolean indicating if the hand has been split.
     """
 
     def __init__(self, chip: Chip):
@@ -76,13 +88,16 @@ class Hand:
         Returns:
         - bool: True if the hand is win, False otherwise.
         """
-        if self.get_value() > 21:
+        hand_value = self.get_value()
+        dealer_value = dealer_hand.get_value()
+
+        if hand_value > 21:
             return Outcome.LOSS
-        elif dealer_hand.get_value() > 21:
+        elif dealer_value > 21:
             return Outcome.WIN
-        elif self.get_value() > dealer_hand.get_value():
+        elif hand_value > dealer_value:
             return Outcome.WIN
-        elif self.get_value() == dealer_hand.get_value():
+        elif hand_value == dealer_value:
             return Outcome.DRAW
         return Outcome.LOSS
 
@@ -117,6 +132,23 @@ class Hand:
         - bool: True if the hand has exactly two cards with the same rank, False otherwise.
         """
         return len(self.cards) == 2 and self.cards[0].rank == self.cards[1].rank and not self.splitted
+
+    def is_soft_hand(self):
+        """
+        Checks if the hand is a soft hand (contains an Ace valued as 11).
+
+        Returns:
+        - bool: True if the hand is a soft hand, False otherwise.
+        """
+        cards = [card for card in self.cards if not card.hidden]
+
+        total_value = sum(card.value for card in cards)
+
+        num_aces = sum(1 for card in cards if card.rank == 'Ace')
+        while total_value > 21 and num_aces:
+            total_value -= 10
+            num_aces -= 1
+        return num_aces > 0
 
     def __str__(self):
         """
