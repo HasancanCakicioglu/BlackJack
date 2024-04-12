@@ -25,7 +25,8 @@ class Seat:
         if len(self.hands) < 2:
             self.hands.append(hand)
         else:
-            print("You cannot have more than 2 hands at a seat.")
+            pass
+            #print("You cannot have more than 2 hands at a seat.")
 
     def split_hand(self):
         """
@@ -35,8 +36,8 @@ class Seat:
         - hand_index (int): The index of the hand to split.
         """
         if self.hands[0].can_split() is False:
-            print("You need 1 hands to split.")
-            print("You need 2 cards to split.")
+            #print("You need 1 hands to split.")
+            #print("You need 2 cards to split.")
             return False
 
         hand_one = Hand(chip=self.hands[0].chip)

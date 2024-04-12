@@ -28,6 +28,12 @@ class Table:
         else:
             print("The table is full. Cannot add more seats.")
 
+    def len_hands(self):
+        """
+        Returns the number of hands at the table.
+        """
+        return sum([len(seat.hands) for seat in self.seats])
+
     def __len__(self):
         """
         Returns the number of seats at the table.

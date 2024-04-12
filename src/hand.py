@@ -106,7 +106,7 @@ class Hand:
         Doubles the bet on the hand and draws exactly one card.
         """
         if len(self.cards) != 2:
-            print("You need exactly 2 cards to double down.")
+            #print("You need exactly 2 cards to double down.")
             return False
 
         self.chip.double()
@@ -149,6 +149,22 @@ class Hand:
             total_value -= 10
             num_aces -= 1
         return num_aces > 0
+
+    def usable_ace_count(self):
+        """
+        Returns the number of usable aces in the hand.
+        """
+        cards = [card for card in self.cards if not card.hidden]
+
+        total_value = sum(card.value for card in cards)
+
+        num_aces = sum(1 for card in cards if card.rank == 'Ace')
+        while total_value > 21 and num_aces:
+            total_value -= 10
+            num_aces -= 1
+
+        return num_aces
+
 
     def __str__(self):
         """

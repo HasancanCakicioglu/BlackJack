@@ -1,7 +1,9 @@
 from typing import SupportsFloat, Any, Optional, Union
 import gymnasium as gym
+import numpy as np
 import pygame
 from gymnasium.core import ActType, ObsType, RenderFrame
+from gymnasium.spaces import Discrete
 from gymnasium.vector.utils import spaces
 from deck import Deck
 from table import Table
@@ -11,17 +13,54 @@ from chip import Chip
 
 
 class BlackJackEnv(gym.Env):
-    def __init__(self,seats_count=1, chip_amounts= [100]):
+    """
+    A Blackjack environment.
+
+    Attributes:
+        - screen: The Pygame screen for rendering the game.
+        - clock: The Pygame clock for managing time.
+        - seats_count: The number of seats at the table.
+        - chip_amounts: The list of chip amounts for each seat.
+         - win: The number of wins.
+        - loss: The number of losses.
+        - draw: The number of draws.
+        - played_hands: The number of hands played.
+        - deck: The deck of cards.
+        - table: The table containing seats and hands.
+        - dealer_hand: The dealer's hand.
+        - playingHand: The current playing hand.
+        - done: Flag indicating if the game is done.
+        - reward: The reward for the current action.
+        - action_space: The action space for the environment.
+        - observation_space: The observation space for the environment.
+
+    """
+
+    metadata = {"render_modes": ["human", "cmd"], "render_fps": 1}
+    def __init__(self, seats_count=1, chip_amounts= [100],render_mode="cmd",fps=1,*args, **kwargs):
+        super().__init__()
+        """
+        Initializes a Blackjack environment.
+
+        Args:
+        - seats_count (int): The number of seats at the table.
+        - chip_amounts (list): A list of chip amounts for each seat.
+
+        """
+
         self.screen = None
         self.clock = None
 
         self.seats_count = seats_count
         self.chip_amounts = chip_amounts
+        self.render_mode = render_mode
+        self.fps = fps
 
         self.win = 0
         self.loss = 0
         self.draw = 0
         self.played_hands = 0
+        self.illegal_moves = 0
 
         self.deck = Deck()
         self.deck.shuffle()
@@ -32,18 +71,38 @@ class BlackJackEnv(gym.Env):
         self.done = False
         self.distribute_cards()
         self.reward = 0
-        self.action_space = spaces.Discrete(5)  # 0: stand, 1: hit, 2: double, 3: split
-        self.observation_space = spaces.Tuple(
-            [
-                spaces.Discrete(32),  # player sum
-                spaces.Discrete(11),  # dealer card
-                spaces.Discrete(2),  # usable ace
-            ]
-        )
-        self.state = ()
+
+        self.action_space = spaces.Discrete(4)  # 0: stand, 1: hit, 2: double, 3: split
+
+        self.observation_space = spaces.Dict({
+            "player_sum": spaces.Discrete(32),
+            "dealer_card": spaces.Discrete(12),
+            "usable_ace": spaces.Discrete(2),
+            "can_split": spaces.Discrete(2),
+            "can_double": spaces.Discrete(2),
+
+        })
+        #self.observation_space = spaces.MultiDiscrete([17, 10, 2])
+
+
+        print(self.observation_space)
+        print(self.observation_space.shape)
+        print(self.observation_space.dtype)
+        print(self.observation_space.sample())
+
+
     def step(
         self, action: ActType
     ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
+        """
+        Perform a step in the environment.
+
+        Args:
+        - action (ActType): The action to take.
+
+        Returns:
+        - tuple: Tuple containing the next observation, reward, done flag, info dictionary.
+        """
 
         hand, seat = self.get_next_hand()
 
@@ -54,10 +113,17 @@ class BlackJackEnv(gym.Env):
             hand.is_busted()
         elif action == 2:
             if not hand.double_down(self.deck):
-                print("You need exactly 2 cards to double down.")
+                self.illegal_moves += 1
+                return self.get_obs(), self.table.len_hands() * -100, True, True, {}
+                pass
+
+                #print("You need exactly 2 cards to double down.")
         elif action == 3:
             if not seat.split_hand():
-                print("You need 1 hands to split.")
+                self.illegal_moves += 1
+                return self.get_obs(), self.table.len_hands() * -100, True, True, {}
+                #print("You need 1 hands to split.")
+                pass
             else:
                 seat.hands[0].add_card(self.deck.hit())
                 seat.hands[1].add_card(self.deck.hit())
@@ -75,14 +141,22 @@ class BlackJackEnv(gym.Env):
 
         return self.get_obs(), 0, False, False, {}
 
-
     def reset(
         self,
-        *,
         seed: Optional[int] = None,
-        options: Optional[dict[str, Any]] = None,
-        full_reset: bool = True,
+        full_reset: bool = True
     ):
+        """
+        Reset the environment.
+
+        Args:
+        - seed (int): Optional seed for random number generation.
+        - options (dict): Optional dictionary of environment options.
+        - full_reset (bool): Whether to fully reset the environment or not.
+
+        Returns:
+        - ObsType: The initial observation after reset.
+        """
 
         if full_reset:
             self.deck = Deck()
@@ -99,13 +173,19 @@ class BlackJackEnv(gym.Env):
         self.dealer_hand = Hand(chip=Chip(0))
         self.playingHand = self.get_next_hand()[0]
         self.distribute_cards()
-        return self.get_obs()
+        return self.get_obs(),{}
 
-    def render(self, mode="cmd"):
+    def render(self):
+        """
+         Render the environment.
 
-        if mode == 'human':
+         Args:
+         - mode (str): The rendering mode. Options are 'human' or 'cmd'.
+         """
 
-            def draw_circle(window, value, x, y, color=(0, 0, 0)):
+        if self.render_mode == 'human':
+
+            def draw_circle(window, value, x, y, color= (0, 0, 0)):
                 circle_radius = 12
                 circle_color = color
                 font = pygame.font.SysFont(None, 24)
@@ -134,8 +214,7 @@ class BlackJackEnv(gym.Env):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     exit()
-            self.clock.tick(1)
-
+            self.clock.tick(self.fps)
 
             for indexCard,card in enumerate(self.dealer_hand.cards):
                 if card.hidden:
@@ -197,16 +276,14 @@ class BlackJackEnv(gym.Env):
                     color = (255, 0, 0)
 
                 pygame.draw.rect(self.screen, (169,169,169), (rect_x, rect_y, rect_width, rect_height))
-                font = pygame.font.Font(None, 36)  # Varsayılan font ve boyut
-                text_surface = font.render("Reward: " + str(self.reward), True, color)  # Beyaz renkli metin
+                font = pygame.font.Font(None, 36)
+                text_surface = font.render("Reward: " + str(self.reward), True, color)
                 text_rect = text_surface.get_rect(center=(self.screenWidth / 2, self.screenHeight / 2))
                 self.screen.blit(text_surface, text_rect)
 
             pygame.display.flip()
 
-        elif mode == 'cmd':
-
-
+        elif self.render_mode == 'cmd':
             print("Dealer's Hand: ", self.dealer_hand)
             print("Player's Hand: ", self.playingHand)
             print("0 - Stand")
@@ -215,15 +292,6 @@ class BlackJackEnv(gym.Env):
             print("3 - Split")
 
             if self.done:
-                for seat in self.table.seats:
-                    for hand in seat.hands:
-                        self.played_hands += 1
-                        if hand.case == Outcome.WIN:
-                            self.win += 1
-                        elif hand.case == Outcome.LOSS:
-                            self.loss += 1
-                        elif hand.case == Outcome.DRAW:
-                            self.draw += 1
                 print("Dealer's Hand: ", self.dealer_hand)
                 for indexSeat,seat in enumerate(self.table.seats):
                     for indexHand,hand in enumerate(seat.hands):
@@ -234,14 +302,21 @@ class BlackJackEnv(gym.Env):
 
 
     def close(self):
-        pass
+        """
+        Close the environment.
+        """
+        if self.screen is not None:
+            pygame.quit()
+
 
     def get_obs(self):
-
-        return [
-            self.dealer_hand,
-            self.playingHand
-        ]
+        return {
+            "player_sum": self.playingHand.get_value(),
+            "dealer_card": self.dealer_hand.cards[0].value,
+            "usable_ace": self.playingHand.usable_ace_count(),
+            "can_split": 1 if self.playingHand.can_split() else 0,
+            "can_double": 1 if self.playingHand.can_double() else 0,
+        }
 
     def distribute_cards(self):
         for k in range(2):
@@ -276,16 +351,20 @@ class BlackJackEnv(gym.Env):
         loss_chip = 0
         for seat in self.table.seats:
             for hand in seat.hands:
+                self.played_hands += 1
                 outcome = hand.is_win(self.dealer_hand)
                 if outcome == Outcome.WIN:
                     win_chip += hand.chip.value
                     hand.case = Outcome.WIN
+                    self.win += 1
                 elif outcome == Outcome.LOSS:
                     loss_chip += hand.chip.value
                     hand.case = Outcome.LOSS
+                    self.loss += 1
                 elif outcome == Outcome.DRAW:
                     hand.case = Outcome.DRAW
-        return win_chip - loss_chip
+                    self.draw += 1
+        return (win_chip - loss_chip) if (win_chip - loss_chip) == 0 else(win_chip - loss_chip)/100
 
 
 
