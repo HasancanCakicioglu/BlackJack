@@ -3,11 +3,11 @@ from stable_baselines3 import PPO,DQN
 from src.environment import BlackJackEnv
 
 # Kaydedilmiş modeli yükle
-model = DQN.load("saved_model_1_DQN.zip")
-#model = PPO.load("saved_model_1_PPO_100_000_0.1")
+#model = DQN.load("saved_model_1_DQN.zip")
+model = PPO.load("PPO_100_000-0.3_3")
 
 # Create a Blackjack environment
-env = BlackJackEnv(seats_count=1,chip_amounts=[100],render_mode="hfd",fps=1)
+env = BlackJackEnv(seats_count=1,chip_amounts=[100],render_mode="human",fps=0.5)
 observation = env.reset()[0]
 episode_count = 0
 
@@ -15,7 +15,7 @@ episode_count = 0
 env.render()
 
 
-while episode_count < 10_000:
+while episode_count < 100_000:
 
     action = model.predict(observation)
     observation, reward, done, _, info = env.step(action[0])

@@ -75,11 +75,11 @@ if __name__ == "__main__":
     env = make_vec_env(make_env, n_envs)
 
 
-    #model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log="./board/", learning_rate=0.00001,ent_coef=0.1)
+    #model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log="./board/", learning_rate=0.00001,ent_coef=0.3)
     #model = DQN("MultiInputPolicy", env, verbose=1, tensorboard_log="./board/", learning_rate=0.00001)
-    model = DQN.load("saved_model_1_DQN.zip",env)
+    model = PPO.load("PPO_100_000-0.3_2",env,ent_coef=0.01,learning_rate=0.000005)
 
     callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
-    model.learn(total_timesteps=200_000, callback=callback, tb_log_name="DQN_1_000_000__200_000")
-    model.save("DQN_1_000_000__200_000")
+    model.learn(total_timesteps=300_000, callback=callback, tb_log_name="PPO_100_000-0.3_3")
+    model.save("PPO_100_000-0.3_3")
     print("Model saved")
