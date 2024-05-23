@@ -1,9 +1,7 @@
-from typing import SupportsFloat, Any, Optional, Union
+from typing import SupportsFloat, Any, Optional
 import gymnasium as gym
-import numpy as np
 import pygame
-from gymnasium.core import ActType, ObsType, RenderFrame
-from gymnasium.spaces import Discrete
+from gymnasium.core import ActType, ObsType
 from gymnasium.vector.utils import spaces
 from deck import Deck
 from table import Table
@@ -37,7 +35,7 @@ class BlackJackEnv(gym.Env):
     """
 
     metadata = {"render_modes": ["human", "cmd"], "render_fps": 1}
-    def __init__(self, seats_count=1, chip_amounts= [100],render_mode="cmd",fps=1,*args, **kwargs):
+    def __init__(self, seats_count=1, chip_amounts= [100],render_mode="cmd",fps=1,envV = 1,*args, **kwargs):
         super().__init__()
         """
         Initializes a Blackjack environment.
@@ -47,6 +45,7 @@ class BlackJackEnv(gym.Env):
         - chip_amounts (list): A list of chip amounts for each seat.
 
         """
+        self.envV = envV
 
         self.screen = None
         self.clock = None
@@ -72,16 +71,42 @@ class BlackJackEnv(gym.Env):
         self.distribute_cards()
         self.reward = 0
 
-        self.action_space = spaces.Discrete(4)  # 0: stand, 1: hit, 2: double, 3: split
+        if envV ==1:
+            self.action_space = spaces.Discrete(4)  # 0: stand, 1: hit, 2: double, 3: split
 
-        self.observation_space = spaces.Dict({
-            "player_sum": spaces.Discrete(32),
-            "dealer_card": spaces.Discrete(12),
-            "usable_ace": spaces.Discrete(2),
-            "can_split": spaces.Discrete(2),
-            "can_double": spaces.Discrete(2),
+            self.observation_space = spaces.Dict({
+                "player_sum": spaces.Discrete(32),
+                "dealer_card": spaces.Discrete(12),
+                "usable_ace": spaces.Discrete(2),
+                "can_split": spaces.Discrete(2),
+                "can_double": spaces.Discrete(2),
 
-        })
+            })
+
+        if envV == 2:
+            self.action_space = spaces.Discrete(4)  # 0: stand, 1: hit, 2: double, 3: split
+
+            self.observation_space = spaces.Dict({
+                "player_sum": spaces.Discrete(32),
+                "dealer_card": spaces.Discrete(12),
+                "usable_ace": spaces.Discrete(2),
+                "can_split": spaces.Discrete(2),
+                "can_double": spaces.Discrete(2),
+
+                "two": spaces.Discrete(100),
+                "three": spaces.Discrete(100),
+                "four": spaces.Discrete(100),
+                "five": spaces.Discrete(100),
+                "six": spaces.Discrete(100),
+                "seven": spaces.Discrete(100),
+                "eight": spaces.Discrete(100),
+                "nine": spaces.Discrete(100),
+                "ten": spaces.Discrete(100),
+                "ace": spaces.Discrete(100),
+                "last_card": spaces.Discrete(12),
+
+            })
+
         #self.observation_space = spaces.MultiDiscrete([17, 10, 2])
 
 
@@ -103,7 +128,6 @@ class BlackJackEnv(gym.Env):
         Returns:
         - tuple: Tuple containing the next observation, reward, done flag, info dictionary.
         """
-
         hand, seat = self.get_next_hand()
 
         if action == 0:
@@ -135,6 +159,7 @@ class BlackJackEnv(gym.Env):
             self.dealer_play()
             self.reward = self.results()
             self.done = True
+            self.deck.add_last_secret_to_prob()
             return self.get_obs(), self.reward, True, True, {}
         else:
             self.playingHand = hand[0]
@@ -310,22 +335,49 @@ class BlackJackEnv(gym.Env):
 
 
     def get_obs(self):
-        return {
-            "player_sum": self.playingHand.get_value(),
-            "dealer_card": self.dealer_hand.cards[0].value,
-            "usable_ace": self.playingHand.usable_ace_count(),
-            "can_split": 1 if self.playingHand.can_split() else 0,
-            "can_double": 1 if self.playingHand.can_double() else 0,
-        }
+
+        if self.envV == 1:
+            return {
+                "player_sum": self.playingHand.get_value(),
+                "dealer_card": self.dealer_hand.cards[0].value,
+                "usable_ace": self.playingHand.usable_ace_count(),
+                "can_split": 1 if self.playingHand.can_split() else 0,
+                "can_double": 1 if self.playingHand.can_double() else 0,
+            }
+        elif self.envV ==2:
+            prob = self.deck.probability_of_cards()
+            return {
+                "player_sum": self.playingHand.get_value(),
+                "dealer_card": self.dealer_hand.cards[0].value,
+                "usable_ace": self.playingHand.usable_ace_count(),
+                "can_split": 1 if self.playingHand.can_split() else 0,
+                "can_double": 1 if self.playingHand.can_double() else 0,
+
+                "two": prob[0]*100,
+                "three": prob[1]*100,
+                "four":prob[2]*100,
+                "five": prob[3]*100,
+                "six": prob[4]*100,
+                "seven": prob[5]*100,
+                "eight": prob[6]*100,
+                "nine": prob[7]*100,
+                "ten": prob[8]*100,
+                "ace": prob[9]*100,
+                "last_card": self.deck.last_card.value,
+
+            }
 
     def distribute_cards(self):
         for k in range(2):
             for i in self.table.seats:
                 i.hands[0].add_card(self.deck.hit())
 
-            card = self.deck.hit()
+
             if k == 1:
+                card = self.deck.hit(secret=True)
                 card.hidden = True
+            else:
+                card = self.deck.hit()
             self.dealer_hand.add_card(card)
 
     def create_objects(self,table,seats_count,chip_amounts):

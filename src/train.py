@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+
 import numpy as np
 from gymnasium.vector.utils import spaces
 from stable_baselines3.common.atari_wrappers import MaxAndSkipEnv
@@ -62,12 +64,12 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
         return True
 
 def make_env(seed=0):
-    env = BlackJackEnv(seats_count=1, chip_amounts=[100], render_mode="human", fps=1)
+    env = BlackJackEnv(seats_count=1, chip_amounts=[100],envV=2, fps=1)
     env = Monitor(env, log_dir)
     return env
 
 if __name__ == "__main__":
-    log_dir = "tmp/"
+    log_dir = "logs/"
     os.makedirs(log_dir, exist_ok=True)
 
     n_envs = 1
@@ -75,11 +77,11 @@ if __name__ == "__main__":
     env = make_vec_env(make_env, n_envs)
 
 
-    #model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log="./board/", learning_rate=0.00001,ent_coef=0.3)
+    #model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log="./tensorboard_logs/", learning_rate=0.00001,ent_coef=0.20)
     #model = DQN("MultiInputPolicy", env, verbose=1, tensorboard_log="./board/", learning_rate=0.00001)
-    model = PPO.load("PPO_100_000-0.3_2",env,ent_coef=0.01,learning_rate=0.000005)
+    model = PPO.load("models/PPO_1_000_000_env2.zip",env,ent_coef=0.01,learning_rate=0.000005)
 
     callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
-    model.learn(total_timesteps=300_000, callback=callback, tb_log_name="PPO_100_000-0.3_3")
-    model.save("PPO_100_000-0.3_3")
+    model.learn(total_timesteps=4_000_000, callback=callback, tb_log_name=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),)
+    model.save("PPO_5_000_000_env2")
     print("Model saved")
