@@ -2,13 +2,11 @@ from stable_baselines3 import PPO,DQN
 
 from src.environment import BlackJackEnv
 
-# Kaydedilmiş modeli yükle
-#model = DQN.load("DQN_1_000_000__200_000.zip")
-#model = PPO.load("models/PPO_1_000_000_env1.zip")
+
 model = PPO.load("models/PPO_5_000_000_env1.zip")
 
 # Create a Blackjack environment
-env = BlackJackEnv(seats_count=1,chip_amounts=[100],render_mode="human",envV=1,fps=0.5)
+env = BlackJackEnv(seats_count=1,chip_amounts=[100],render_mode="humanfdd",envV=1,fps=0.5)
 observation = env.reset()[0]
 episode_count = 0
 
@@ -35,6 +33,9 @@ print("Draw: ", env.draw)
 print("Win rate: ", env.win/env.played_hands)
 print("Loss rate: ", env.loss/env.played_hands)
 print("Draw rate: ", env.draw/env.played_hands)
+print("Money ",env.money)
+print("Earn Rate ",env.earn_money_rate)
+print("Lose Rate ",env.loss_money_rate)
 print("Illegal Moves: ", env.illegal_moves)
 
 

@@ -60,6 +60,10 @@ class BlackJackEnv(gym.Env):
         self.draw = 0
         self.played_hands = 0
         self.illegal_moves = 0
+        self.money = 0
+        self.all_money = 0
+        self.earn_money_rate = 0
+        self.loss_money_rate = 0
 
         self.deck = Deck()
         self.deck.shuffle()
@@ -152,7 +156,9 @@ class BlackJackEnv(gym.Env):
         if hand is None:
             self.dealer_play()
             self.reward = self.results()
+            self.money = self.money + self.reward
             self.done = True
+            self.sum_all_chips()
             self.deck.add_last_secret_to_prob()
             return self.get_obs(), self.reward, True, True, {}
         else:
@@ -286,8 +292,8 @@ class BlackJackEnv(gym.Env):
                 surface.blit(text_surface, (10, 10 + i * 20))
             self.screen.blit(surface, (rect_x, rect_y))
 
-            rect_width = 100
-            rect_height = 100
+            rect_width = 120
+            rect_height = 220
             rect_x = 10
             rect_y = 10
 
@@ -309,7 +315,24 @@ class BlackJackEnv(gym.Env):
             text = f"Draw: {self.draw}"
             text_surface = font.render(text, True, (255, 255, 255))
             surface.blit(text_surface, (10, 10 + 60))
+
+            text = "-"*20
+            text_surface = font.render(text, True, (255, 255, 255))
+            surface.blit(text_surface, (10, 10 + 80))
+
+            text = f"Money: {self.money * 100}"
+            text_surface = font.render(text, True, (255, 255, 255))
+            surface.blit(text_surface, (10, 10 + 100))
+
+            text = f"Earn Rate: {self.earn_money_rate:.2f} %"
+            text_surface = font.render(text, True, (255, 255, 255))
+            surface.blit(text_surface, (10, 10 + 120))
+
+            text = f"Loss Rate: {self.loss_money_rate:.2f} %"
+            text_surface = font.render(text, True, (255, 255, 255))
+            surface.blit(text_surface, (10, 10 + 140))
             self.screen.blit(surface, (rect_x, rect_y))
+
 
             if self.done:
                 rect_width = self.screenWidth / 2.5
@@ -463,4 +486,18 @@ class BlackJackEnv(gym.Env):
                     return True
         return False
 
+    def sum_all_chips(self):
+        for seat in self.table.seats:
+            for hand in seat.hands:
+                self.all_money = self.all_money + hand.chip.value / 100
 
+        if self.all_money == 0:
+            self.earn_money_rate = 0
+            self.loss_money_rate = 0
+            return
+        if self.money <=0:
+            self.earn_money_rate = (((self.all_money - self.money) / 2 ) + self.money) / self.all_money
+            self.loss_money_rate = 1 - abs(self.earn_money_rate)
+        else:
+            self.earn_money_rate = (((self.all_money - self.money) / 2) + self.money) / self.all_money
+            self.loss_money_rate = 1 - abs(self.earn_money_rate)
