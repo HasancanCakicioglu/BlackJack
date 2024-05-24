@@ -110,12 +110,6 @@ class BlackJackEnv(gym.Env):
         #self.observation_space = spaces.MultiDiscrete([17, 10, 2])
 
 
-        print(self.observation_space)
-        print(self.observation_space.shape)
-        print(self.observation_space.dtype)
-        print(self.observation_space.sample())
-
-
     def step(
         self, action: ActType
     ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
@@ -274,6 +268,9 @@ class BlackJackEnv(gym.Env):
                     else:
                         color = (255, 0, 0)
                     draw_circle(self.screen, hand.get_value(), main_space, self.screenHeight-40,color)
+                    if hand.doubled:
+                        draw_circle(self.screen, "2x", main_space, self.screenHeight-15)
+
 
             rect_width = 100
             rect_height = 220
@@ -287,6 +284,31 @@ class BlackJackEnv(gym.Env):
                 text = f"{i + 2}: {probability:.2f} %"
                 text_surface = font.render(text, True, (255, 255, 255))
                 surface.blit(text_surface, (10, 10 + i * 20))
+            self.screen.blit(surface, (rect_x, rect_y))
+
+            rect_width = 100
+            rect_height = 100
+            rect_x = 10
+            rect_y = 10
+
+            font = pygame.font.SysFont("Arial", 12)
+            surface = pygame.Surface((rect_width, rect_height), pygame.SRCALPHA)
+            surface.fill((0, 0, 0, 128))  # Şeffaf dikdörtgen
+            text = f"Games: {self.played_hands}"
+            text_surface = font.render(text, True, (255, 255, 255))
+            surface.blit(text_surface, (10, 10))
+
+            text = f"Win: {self.win}"
+            text_surface = font.render(text, True, (255, 255, 255))
+            surface.blit(text_surface, (10, 10 + 20))
+
+            text = f"Lose: {self.loss}"
+            text_surface = font.render(text, True, (255, 255, 255))
+            surface.blit(text_surface, (10, 10 + 40))
+
+            text = f"Draw: {self.draw}"
+            text_surface = font.render(text, True, (255, 255, 255))
+            surface.blit(text_surface, (10, 10 + 60))
             self.screen.blit(surface, (rect_x, rect_y))
 
             if self.done:
@@ -366,6 +388,8 @@ class BlackJackEnv(gym.Env):
                 "last_card": self.deck.last_card.value,
 
             }
+        elif self.envV == 3:
+            return self.dealer_hand,self.playingHand
 
     def distribute_cards(self):
         for k in range(2):
@@ -429,6 +453,10 @@ class BlackJackEnv(gym.Env):
         return None
 
     def at_least_one_hand_not_finalized(self):
+        """
+        Checks if at least one hand is not finalized.
+        :return:
+        """
         for seat in self.table.seats:
             for hand in seat.hands:
                 if hand.case == Outcome.UNCLEAR:

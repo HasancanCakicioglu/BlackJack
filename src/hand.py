@@ -38,6 +38,7 @@ class Hand:
         self.chip = chip
         self.done = False
         self.case = Outcome.UNCLEAR
+        self.doubled = False
         self.splitted = False
 
     def add_card(self, card: Card):
@@ -108,7 +109,7 @@ class Hand:
         if len(self.cards) != 2:
             #print("You need exactly 2 cards to double down.")
             return False
-
+        self.doubled = True
         self.chip.double()
         self.add_card(deck.hit())
         self.done = True
