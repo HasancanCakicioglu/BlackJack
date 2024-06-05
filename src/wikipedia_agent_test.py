@@ -4,7 +4,7 @@ from src.wikipedia_agent import WikipediaAgent
 agent = WikipediaAgent()
 
 # Create a Blackjack environment
-env = BlackJackEnv(seats_count=1,chip_amounts=[100],render_mode="hugman",envV=3,fps=0.5)
+env = BlackJackEnv(seats_count=1,chip_amounts=[100],render_mode="human",envV=3,fps=0.5)
 observation = env.reset()[0]
 episode_count = 0
 
@@ -12,7 +12,7 @@ episode_count = 0
 env.render()
 
 
-while episode_count < 100_000:
+while episode_count < 1_000_000:
 
     action = agent.get_action(observation[0],observation[1])
     observation, reward, done, _, info = env.step(action)

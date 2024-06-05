@@ -6,7 +6,7 @@ from src.environment import BlackJackEnv
 model = PPO.load("models/PPO_5_000_000_env1.zip")
 
 # Create a Blackjack environment
-env = BlackJackEnv(seats_count=1,chip_amounts=[100],render_mode="humanfdd",envV=1,fps=0.5)
+env = BlackJackEnv(seats_count=7,chip_amounts=[100,100,100,100,100,100,100],render_mode="human",envV=1,fps=0.5)
 observation = env.reset()[0]
 episode_count = 0
 

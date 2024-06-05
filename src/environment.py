@@ -287,12 +287,12 @@ class BlackJackEnv(gym.Env):
             surface = pygame.Surface((rect_width, rect_height), pygame.SRCALPHA)
             surface.fill((0, 0, 0, 128))  # Şeffaf dikdörtgen
             for i, probability in enumerate(self.deck.probability_of_cards()):
-                text = f"{i + 2}: {probability:.2f} %"
+                text = f"{i + 2}: {100 * probability:.2f} %"
                 text_surface = font.render(text, True, (255, 255, 255))
                 surface.blit(text_surface, (10, 10 + i * 20))
             self.screen.blit(surface, (rect_x, rect_y))
 
-            rect_width = 120
+            rect_width = 130
             rect_height = 220
             rect_x = 10
             rect_y = 10
@@ -324,11 +324,11 @@ class BlackJackEnv(gym.Env):
             text_surface = font.render(text, True, (255, 255, 255))
             surface.blit(text_surface, (10, 10 + 100))
 
-            text = f"Earn Rate: {self.earn_money_rate:.2f} %"
+            text = f"Earn Rate: {100 * self.earn_money_rate:.2f} %"
             text_surface = font.render(text, True, (255, 255, 255))
             surface.blit(text_surface, (10, 10 + 120))
 
-            text = f"Loss Rate: {self.loss_money_rate:.2f} %"
+            text = f"Loss Rate: {100 * self.loss_money_rate:.2f} %"
             text_surface = font.render(text, True, (255, 255, 255))
             surface.blit(text_surface, (10, 10 + 140))
             self.screen.blit(surface, (rect_x, rect_y))

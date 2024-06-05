@@ -6,6 +6,3 @@ Env2:
     state = [ dealer hand value , player hand value , usable ace in player hand,can_split,can_double ,two , three, four, five, six, seven, eight, nine, ten,ace , last card]
     spaces.Discrete(4)  # 0: stand, 1: hit, 2: double, 3: split
 
-Env3:
-    state = [ dealer hand value , player hand value , usable ace in player hand,can_split,can_double ,two , three, four, five, six, seven, eight, nine, ten,ace , last card]
-    spaces.Discrete(4)  # 0: stand, 1: hit, 2: double, 3: split , 4:surrender
