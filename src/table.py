@@ -1,4 +1,4 @@
-from seat import Seat
+from src.seat import Seat
 
 
 class Table:

@@ -1,5 +1,5 @@
-from card import Card
-from chip import Chip
+from src.card import Card
+from src.chip import Chip
 
 class Outcome:
     """

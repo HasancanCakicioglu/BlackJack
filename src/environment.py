@@ -1,13 +1,14 @@
 from typing import SupportsFloat, Any, Optional
 import gymnasium as gym
+import numpy as np
 import pygame
 from gymnasium.core import ActType, ObsType
 from gymnasium.vector.utils import spaces
-from deck import Deck
-from table import Table
-from seat import Seat
-from hand import Hand, Outcome
-from chip import Chip
+from src.deck import Deck
+from src.table import Table
+from src.seat import Seat
+from src.hand import Hand, Outcome
+from src.chip import Chip
 
 
 class BlackJackEnv(gym.Env):
@@ -110,6 +111,23 @@ class BlackJackEnv(gym.Env):
                 "last_card": spaces.Discrete(12),
 
             })
+        if envV == 3:
+            self.action_space = spaces.Discrete(4)  # 0: stand, 1: hit, 2: double, 3: split
+
+            self.observation_space = spaces.Dict({
+                "player_sum": spaces.Discrete(32),
+                "dealer_card": spaces.Discrete(12),
+                "usable_ace": spaces.Discrete(2),
+                "can_split": spaces.Discrete(2),
+                "can_double": spaces.Discrete(2),
+
+                "prob":spaces.Box(low=0, high=100, shape=(10,), dtype=np.float16),
+                "last_card":spaces.Discrete(12),
+                "last_second_card":spaces.Discrete(12),
+                "last_third_card":spaces.Discrete(12),
+
+
+            })
 
         #self.observation_space = spaces.MultiDiscrete([17, 10, 2])
 
@@ -139,12 +157,10 @@ class BlackJackEnv(gym.Env):
                 return self.get_obs(), self.table.len_hands() * -100, True, True, {}
                 pass
 
-                #print("You need exactly 2 cards to double down.")
         elif action == 3:
             if not seat.split_hand():
                 self.illegal_moves += 1
                 return self.get_obs(), self.table.len_hands() * -100, True, True, {}
-                #print("You need 1 hands to split.")
                 pass
             else:
                 seat.hands[0].add_card(self.deck.hit())
@@ -154,6 +170,7 @@ class BlackJackEnv(gym.Env):
         hand = self.get_next_hand()
 
         if hand is None:
+
             self.dealer_play()
             self.reward = self.results()
             self.money = self.money + self.reward
@@ -412,7 +429,20 @@ class BlackJackEnv(gym.Env):
 
             }
         elif self.envV == 3:
-            return self.dealer_hand,self.playingHand
+
+            prob = self.deck.probability_of_cards()
+            return {
+                "player_sum": self.playingHand.get_value(),
+                "dealer_card": self.dealer_hand.cards[0].value,
+                "usable_ace": self.playingHand.usable_ace_count(),
+                "can_split": 1 if self.playingHand.can_split() else 0,
+                "can_double": 1 if self.playingHand.can_double() else 0,
+
+                "prob": np.array(prob,dtype=np.float16),
+                "last_card": self.deck.last_card.value,
+                "last_second_card": self.deck.last_second_card.value,
+                "last_third_card": self.deck.last_third_card.value,
+            }
 
     def distribute_cards(self):
         for k in range(2):
